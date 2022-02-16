@@ -11,7 +11,14 @@ class ViewController: UIViewController {
 
     override func viewDidLoad() {
         super.viewDidLoad()
-        // Do any additional setup after loading the view.
+        APICaller.shared.getNews { result in
+            switch result {
+            case .success(let articles):
+                print (articles)
+            case .failure(let error):
+                print (error)
+            }
+        }
     }
 
 
