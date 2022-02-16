@@ -12,10 +12,11 @@ protocol NewsListViewModelProtocol: AnyObject {
     func fetchNews(completion: @escaping() -> Void)
     func numberOfRows() -> Int
     func cellViewModel(at indexPath: IndexPath) -> NewsListTableViewCellViewModelProtocol
-    func viewModelForSelectedRow(at indexPath: IndexPath) -> NewsListViewModelProtocol
+    func viewModelForSelectedRow(at indexPath: IndexPath) -> NewsDetailsViewModelProtocol
 }
 
 class NewsListViewModel: NewsListViewModelProtocol {
+    
     var news: [Article] = []
     
     func fetchNews(completion: @escaping () -> Void) {
@@ -23,6 +24,7 @@ class NewsListViewModel: NewsListViewModelProtocol {
             switch result {
             case .success(let news):
                 self.news = news
+                print(news)
             case .failure(let error):
                 print (error)
             }
@@ -38,9 +40,9 @@ class NewsListViewModel: NewsListViewModelProtocol {
         return NewsTableViewCellViewModel(news: article)
     }
     
-    func viewModelForSelectedRow(at indexPath: IndexPath) -> NewsListViewModelProtocol {
+    func viewModelForSelectedRow(at indexPath: IndexPath) -> NewsDetailsViewModelProtocol{
         let article = news[indexPath.row]
-        return NewsListViewModel()
+        return NewsDetailsViewModel(news: article)
     }
     
     

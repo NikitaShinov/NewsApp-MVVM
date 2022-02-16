@@ -94,12 +94,12 @@ class NewsListTableViewCell: UITableViewCell {
                                     height: 10)
     }
     
-    override func prepareForReuse() {
-        super.prepareForReuse()
-        title.text = nil
-        subtitle.text = nil
-        newsImage.image = nil
-        counterLabel.text = nil
-    }
+//    override func prepareForReuse() {
+//        super.prepareForReuse()
+//        title.text = nil
+//        subtitle.text = nil
+//        newsImage.image = nil
+//        counterLabel.text = nil
+//    }
     
 }
