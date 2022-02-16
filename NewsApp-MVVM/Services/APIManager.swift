@@ -15,7 +15,7 @@ class APICaller {
     
     public func getNews(completion: @escaping (Result<[Article], Error>) -> Void) {
         
-        guard let url = Constants.url else { return }
+        guard let url = URL(string: Constants.url) else { return }
         
         let task = URLSession.shared.dataTask(with: url) { data, response, error in
             if let error = error {
