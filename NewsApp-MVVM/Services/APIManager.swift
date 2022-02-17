@@ -13,21 +13,27 @@ class APICaller {
     
     private init() {}
     
-    public func getNews(completion: @escaping (Result<[Article], Error>) -> Void) {
+    public func getNews(completion: @escaping (_ news: Response) -> Void) {
         
         guard let url = URL(string: Constants.url) else { return }
         
         let task = URLSession.shared.dataTask(with: url) { data, response, error in
-            if let error = error {
-                completion(.failure(error))
-            } else if let data = data {
-                do {
-                    let result = try JSONDecoder().decode(Response.self, from: data)
-                    print (result.articles)
-                    completion(.success(result.articles))
-                } catch {
-                    completion(.failure(error))
+            guard let data = data else {
+                print(error?.localizedDescription ?? "No Discription")
+                return
+            }
+            
+            do {
+                let decoder = JSONDecoder()
+                decoder.keyDecodingStrategy = .convertFromSnakeCase
+                let result = try decoder.decode(Response.self, from: data)
+                let news = result.articles
+                DispatchQueue.main.async {
+                    completion(result)
+                    print (news)
                 }
+            } catch let error {
+                print("Error serialization json", error)
             }
         }
         task.resume()

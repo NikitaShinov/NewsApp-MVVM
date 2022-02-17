@@ -13,7 +13,7 @@ class NewsDetailsViewController: UIViewController {
 
     override func viewDidLoad() {
         super.viewDidLoad()
-        print (viewModel.newsTitle)
+//        print (viewModel.newsTitle)
 
     }
     

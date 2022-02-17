@@ -7,7 +7,7 @@
 
 import Foundation
 
-protocol NewsListViewModelProtocol: AnyObject {
+protocol NewsListViewModelProtocol {
     var news: [Article] { get }
     func fetchNews(completion: @escaping() -> Void)
     func numberOfRows() -> Int
@@ -20,14 +20,9 @@ class NewsListViewModel: NewsListViewModelProtocol {
     var news: [Article] = []
     
     func fetchNews(completion: @escaping () -> Void) {
-        APICaller.shared.getNews { [unowned self] result in
-            switch result {
-            case .success(let news):
-                self.news = news
-                print(news)
-            case .failure(let error):
-                print (error)
-            }
+        APICaller.shared.getNews { [unowned self] news in
+            self.news = news.articles
+            completion()
         }
     }
     
