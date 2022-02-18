@@ -7,38 +7,88 @@
 
 import Foundation
 
-protocol NewsListViewModelProtocol {
-    var news: [Article] { get }
-    func fetchNews(completion: @escaping() -> Void)
-    func numberOfRows() -> Int
-    func cellViewModel(at indexPath: IndexPath) -> NewsListTableViewCellViewModelProtocol
-    func viewModelForSelectedRow(at indexPath: IndexPath) -> NewsDetailsViewModelProtocol
-}
-
-class NewsListViewModel: NewsListViewModelProtocol {
+class NewsViewModel {
     
-    var news: [Article] = []
+    var newsArray = [Article]()
+    var onUpdate: () -> Void = {}
+    var onUpdateError: () -> Void = {}
     
-    func fetchNews(completion: @escaping () -> Void) {
-        APICaller.shared.getNews { [unowned self] news in
-            self.news = news.articles
-            completion()
+    func fetchNews(completion: @escaping(Result<[Article], Error>) -> Void) {
+        APICaller.shared.getNews { [weak self] result in
+            switch result {
+            case .success(let receivedArticles):
+                self?.newsArray = receivedArticles
+                completion(.success(receivedArticles))
+            case .failure(let error):
+                completion(.failure(error))
+            }
         }
     }
     
-    func numberOfRows() -> Int {
-        news.count
+    func refreshNews(completion: @escaping(Result<[Article], Error>) -> Void) {
+        APICaller.shared.getNews { [weak self] result in
+            switch result {
+            case .success(let receivedArticles):
+                self?.newsArray = receivedArticles
+                do {
+                    let encoder = JSONEncoder()
+                    let encoded = try encoder.encode(self?.newsArray)
+                    UserDefaults.standard.set(encoded, forKey: "articles")
+                } catch {
+                }
+                completion(.success(receivedArticles))
+            case.failure(let error):
+                completion(.failure(error))
+            }
+        }
     }
     
-    func cellViewModel(at indexPath: IndexPath) -> NewsListTableViewCellViewModelProtocol {
-        let article = news[indexPath.row]
-        return NewsTableViewCellViewModel(news: article)
+    func configureNews(completion: @escaping([Article]) -> Void) {
+        if let articles = UserDefaults.standard.data(forKey: "articles") {
+            do {
+                let decoder = JSONDecoder()
+                let articles = (try decoder.decode([Article].self,
+                                                   from: articles)).enumerated().compactMap { $0.offset < 20 ? $0.element : nil }
+                completion(articles)
+            } catch {
+                print (error.localizedDescription)
+            }
+        } else {
+            fetchNews { [weak self] result in
+                switch result {
+                case .success(let receivedArticles):
+                    do {
+                        let encoder = JSONEncoder()
+                        let articles = try encoder.encode(receivedArticles)
+                        UserDefaults.standard.set(articles, forKey: "articles")
+                        self?.onUpdate()
+                    } catch {
+                        
+                    }
+                case .failure(_):
+                    self?.onUpdateError()
+                }
+            }
+        }
     }
     
-    func viewModelForSelectedRow(at indexPath: IndexPath) -> NewsDetailsViewModelProtocol{
-        let article = news[indexPath.row]
-        return NewsDetailsViewModel(news: article)
+    func countTaps(indexPath: IndexPath, viewModel: NewsViewModel) {
+        var article = newsArray[indexPath.row]
+        if var count = article.countOfViews {
+            count += 1
+            article.countOfViews = count
+        } else {
+            article.countOfViews = 1
+        }
+        viewModel.newsArray[indexPath.row] = article
+        
+        do {
+            let encoder = JSONEncoder()
+            let data = try encoder.encode(newsArray)
+            UserDefaults.standard.set(data, forKey: "articles")
+        } catch {
+            print (error)
+        }
     }
-    
     
 }

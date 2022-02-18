@@ -11,15 +11,6 @@ class NewsListTableViewCell: UITableViewCell {
     
     static let identifier = "NewsListTableViewCell"
     
-    var viewModel: NewsListTableViewCellViewModelProtocol!{
-        didSet {
-            title.text = viewModel.newsTitle
-            subtitle.text = viewModel.newsDescription
-            guard let imageData = viewModel.imageData else { return }
-            newsImage.image = UIImage(data: imageData)
-        }
-    }
-    
     private let title: UILabel = {
         let title = UILabel()
         title.numberOfLines = 0
@@ -84,13 +75,13 @@ class NewsListTableViewCell: UITableViewCell {
         newsImage.frame = CGRect(x: contentView.frame.size.width - 150,
                                  y: 5,
                                  width: 130,
-                                 height: contentView.frame.size.height - 30)
+                                 height: contentView.frame.size.height - 50)
         counterImage.frame = CGRect(x: contentView.frame.size.width - 150,
-                                    y: 130,
+                                    y: 180,
                                     width: 16,
                                     height: 10)
         counterLabel.frame = CGRect(x: contentView.frame.size.width - 120,
-                                    y: 130,
+                                    y: 180,
                                     width: 16,
                                     height: 10)
     }
@@ -101,6 +92,14 @@ class NewsListTableViewCell: UITableViewCell {
         subtitle.text = nil
         newsImage.image = nil
         counterLabel.text = nil
+    }
+    
+    func configureCell(with viewModel: NewsViewModel, for indexPath: IndexPath) {
+        title.text = viewModel.newsArray[indexPath.row].title
+        subtitle.text = viewModel.newsArray[indexPath.row].description
+        counterLabel.text = "\(viewModel.newsArray[indexPath.row].countOfViews ?? 0)"
+        guard let image = ImageManager.shared.getImage(from: viewModel.newsArray[indexPath.row].urlToImage) else { return }
+        newsImage.image = UIImage(data: image)
     }
     
 }

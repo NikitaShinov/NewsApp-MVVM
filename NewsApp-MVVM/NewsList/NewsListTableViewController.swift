@@ -9,22 +9,40 @@ import UIKit
 
 class NewsListTableViewController: UITableViewController {
     
-    private var viewModel: NewsListViewModelProtocol! {
-        didSet {
-            viewModel.fetchNews {
-                self.tableView.reloadData()
-            }
-        }
-    }
+    private var viewModel: NewsViewModel!
+    
+    let spinner = UIActivityIndicatorView(style: .medium)
 
     override func viewDidLoad() {
         super.viewDidLoad()
+        configureUI()
+        viewModel = NewsViewModel()
+        viewModel.configureNews { [weak self] result in
+            DispatchQueue.main.async {
+                self?.viewModel.newsArray.append(contentsOf: result)
+                self?.tableView.reloadData()
+            }
+        }
+        viewModel.onUpdate = {
+            DispatchQueue.main.async {
+                self.tableView.reloadData()
+            }
+        }
+        
+        viewModel.onUpdateError = {
+            DispatchQueue.main.async {
+                self.tableView.reloadData()
+            }
+        }
+        
+                
+    }
+    
+    private func configureUI() {
         title = "NEWS"
-        viewModel = NewsListViewModel()
         tableView.register(NewsListTableViewCell.self,
                            forCellReuseIdentifier: NewsListTableViewCell.identifier)
         view.backgroundColor = .systemBackground
-        
     }
     
     private func setupNavigationBar() {
@@ -38,21 +56,70 @@ class NewsListTableViewController: UITableViewController {
             navigationController?.navigationBar.scrollEdgeAppearance = navBarAppearance
         }
     }
+    
+    let pulltoRefresh: UIRefreshControl = {
+            let refreshControl = UIRefreshControl()
+            refreshControl.addTarget(self, action: #selector(refresh(sender:)), for: .valueChanged)
+            return refreshControl
+        }()
+        
+        @objc private func refresh(sender: UIRefreshControl) {
+            viewModel.refreshNews { [weak self] (result) in
+                switch result {
+                case .success(_):
+                    DispatchQueue.main.async {
+                        //indicator activivty stop
+                        self?.showSpinnerLoadingView(isShow: false)
+                        self?.tableView.reloadData()
+                    }
+                case .failure(_):
+                    self?.showSpinnerLoadingView(isShow: false)
+                    self?.showAlert(title: "No Internet", message: "Check your Internet Connection")
+                    
+                   
+                }
+            }
+            sender.endRefreshing()
+        }
+    
+    private func showSpinnerLoadingView(isShow: Bool) {
+        if isShow {
+            self.spinner.isHidden = false
+            spinner.startAnimating()
+        } else if spinner.isAnimating {
+            spinner.stopAnimating()
+            spinner.isHidden = true
+        }
+    }
+    
+    func showAlert(title: String, message: String) {
+           let alert = UIAlertController(title: title, message: message, preferredStyle: UIAlertController.Style.alert)
+           alert.addAction(UIAlertAction(title: "Ок", style: UIAlertAction.Style.default, handler: nil))
+           self.present(alert, animated: true, completion: nil)
+       }
 
     // MARK: - Table view data source
 
     override func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
-        viewModel.numberOfRows()
+        viewModel.newsArray.count
     }
     
     override func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
         let cell = tableView.dequeueReusableCell(withIdentifier: NewsListTableViewCell.identifier, for: indexPath) as! NewsListTableViewCell
-        cell.viewModel = viewModel.cellViewModel(at: indexPath)
+        cell.configureCell(with: viewModel, for: indexPath)
         return cell
     }
     
     override func tableView(_ tableView: UITableView, heightForRowAt indexPath: IndexPath) -> CGFloat {
         200
+    }
+    //MARK: - Table view delegate
+    override func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
+        tableView.deselectRow(at: indexPath, animated: true)
+//        let detailsVC = NewsDetailsViewController()
+//        detailsVC.viewModel = viewModel.viewModelForSelectedRow(at: indexPath)
+//        present(detailsVC, animated: true)
+        
     }
 
 }

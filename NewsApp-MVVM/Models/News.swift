@@ -17,4 +17,5 @@ struct Article: Codable {
     let url: String?
     let urlToImage: URL?
     let content: String
+    var countOfViews: Int? = 0
 }
