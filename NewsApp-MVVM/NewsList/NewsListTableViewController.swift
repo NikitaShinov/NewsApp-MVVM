@@ -17,6 +17,8 @@ class NewsListTableViewController: UITableViewController {
     override func viewDidLoad() {
         super.viewDidLoad()
         configureUI()
+        configureSpinnerView()
+        showSpinnerLoadingView(isShowing: true)
         viewModel = NewsViewModel()
         viewModel.configureNews { [weak self] result in
             DispatchQueue.main.async {
@@ -46,6 +48,7 @@ class NewsListTableViewController: UITableViewController {
         title = "NEWS"
         tableView.register(NewsListTableViewCell.self,
                            forCellReuseIdentifier: NewsListTableViewCell.identifier)
+        tableView.refreshControl = pulltoRefresh
         view.backgroundColor = .systemBackground
     }
     
@@ -86,6 +89,19 @@ class NewsListTableViewController: UITableViewController {
             sender.endRefreshing()
         }
     
+    private func configureSpinnerView() {
+        tableView.addSubview(spinner)
+        
+        spinner.translatesAutoresizingMaskIntoConstraints = false
+        
+        NSLayoutConstraint.activate([
+            spinner.centerXAnchor.constraint(equalTo: self.tableView.centerXAnchor),
+            spinner.centerYAnchor.constraint(equalTo: self.tableView.centerYAnchor),
+            spinner.heightAnchor.constraint(equalToConstant: 30),
+            spinner.widthAnchor.constraint(equalToConstant: 30)
+        ])
+    }
+    
     private func showSpinnerLoadingView(isShowing: Bool) {
         if isShowing {
             self.spinner.isHidden = false
@@ -125,13 +141,13 @@ class NewsListTableViewController: UITableViewController {
         
         let item = viewModel.newsArray[indexPath.row]
         
-        guard let url = item.url else { return }
-        guard let url = URL(string: url) else { return }
-        
-        let config = SFSafariViewController.Configuration()
-        let safariVC = SFSafariViewController(url: url, configuration: config)
-        safariVC.modalPresentationStyle = .fullScreen
-        present(safariVC, animated: true, completion: nil)
+        if let url = item.url {
+            let config = SFSafariViewController.Configuration()
+            guard let url = URL(string: url) else { return }
+            let safariVC = SFSafariViewController(url: url, configuration: config)
+            safariVC.modalPresentationStyle = .automatic
+            present(safariVC, animated: true, completion: nil)
+        }
         
     }
 
