@@ -6,10 +6,11 @@
 //
 
 import UIKit
+import SafariServices
 
 class NewsListTableViewController: UITableViewController {
     
-    private var viewModel: NewsViewModel!
+    var viewModel: NewsViewModel!
     
     let spinner = UIActivityIndicatorView(style: .medium)
 
@@ -20,17 +21,20 @@ class NewsListTableViewController: UITableViewController {
         viewModel.configureNews { [weak self] result in
             DispatchQueue.main.async {
                 self?.viewModel.newsArray.append(contentsOf: result)
+                self?.showSpinnerLoadingView(isShowing: false)
                 self?.tableView.reloadData()
             }
         }
         viewModel.onUpdate = {
             DispatchQueue.main.async {
+                self.showSpinnerLoadingView(isShowing: false)
                 self.tableView.reloadData()
             }
         }
         
         viewModel.onUpdateError = {
             DispatchQueue.main.async {
+                self.showSpinnerLoadingView(isShowing: false)
                 self.tableView.reloadData()
             }
         }
@@ -69,11 +73,11 @@ class NewsListTableViewController: UITableViewController {
                 case .success(_):
                     DispatchQueue.main.async {
                         //indicator activivty stop
-                        self?.showSpinnerLoadingView(isShow: false)
+                        self?.showSpinnerLoadingView(isShowing: false)
                         self?.tableView.reloadData()
                     }
                 case .failure(_):
-                    self?.showSpinnerLoadingView(isShow: false)
+                    self?.showSpinnerLoadingView(isShowing: false)
                     self?.showAlert(title: "No Internet", message: "Check your Internet Connection")
                     
                    
@@ -82,8 +86,8 @@ class NewsListTableViewController: UITableViewController {
             sender.endRefreshing()
         }
     
-    private func showSpinnerLoadingView(isShow: Bool) {
-        if isShow {
+    private func showSpinnerLoadingView(isShowing: Bool) {
+        if isShowing {
             self.spinner.isHidden = false
             spinner.startAnimating()
         } else if spinner.isAnimating {
@@ -116,9 +120,18 @@ class NewsListTableViewController: UITableViewController {
     //MARK: - Table view delegate
     override func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
         tableView.deselectRow(at: indexPath, animated: true)
-//        let detailsVC = NewsDetailsViewController()
-//        detailsVC.viewModel = viewModel.viewModelForSelectedRow(at: indexPath)
-//        present(detailsVC, animated: true)
+        viewModel.countTaps(indexPath: indexPath, viewModel: viewModel)
+        tableView.reloadData()
+        
+        let item = viewModel.newsArray[indexPath.row]
+        
+        guard let url = item.url else { return }
+        guard let url = URL(string: url) else { return }
+        
+        let config = SFSafariViewController.Configuration()
+        let safariVC = SFSafariViewController(url: url, configuration: config)
+        safariVC.modalPresentationStyle = .fullScreen
+        present(safariVC, animated: true, completion: nil)
         
     }
 

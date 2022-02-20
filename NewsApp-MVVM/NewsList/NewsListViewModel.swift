@@ -13,10 +13,11 @@ class NewsViewModel {
     var onUpdate: () -> Void = {}
     var onUpdateError: () -> Void = {}
     
-    func fetchNews(completion: @escaping(Result<[Article], Error>) -> Void) {
+    func fetchNews(completion: @escaping(Result<[Article]?, Error>) -> Void) {
         APICaller.shared.getNews { [weak self] result in
             switch result {
             case .success(let receivedArticles):
+                guard let receivedArticles = receivedArticles else { return }
                 self?.newsArray = receivedArticles
                 completion(.success(receivedArticles))
             case .failure(let error):
@@ -29,6 +30,7 @@ class NewsViewModel {
         APICaller.shared.getNews { [weak self] result in
             switch result {
             case .success(let receivedArticles):
+                guard let receivedArticles = receivedArticles else { return }
                 self?.newsArray = receivedArticles
                 do {
                     let encoder = JSONEncoder()
@@ -47,9 +49,9 @@ class NewsViewModel {
         if let articles = UserDefaults.standard.data(forKey: "articles") {
             do {
                 let decoder = JSONDecoder()
-                let articles = (try decoder.decode([Article].self,
+                let news = (try decoder.decode([Article].self,
                                                    from: articles)).enumerated().compactMap { $0.offset < 20 ? $0.element : nil }
-                completion(articles)
+                completion(news)
             } catch {
                 print (error.localizedDescription)
             }
@@ -66,6 +68,7 @@ class NewsViewModel {
                         
                     }
                 case .failure(_):
+                    print ("error")
                     self?.onUpdateError()
                 }
             }
