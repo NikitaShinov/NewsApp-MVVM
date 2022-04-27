@@ -3,7 +3,7 @@ Training app to study MVVM architecture
 
 ## Features
 
-- Fully programmati UI
+- Fully programmatic UI
 - Tableview
 - Custom cells
 - Network Calls
